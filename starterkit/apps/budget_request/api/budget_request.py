@@ -37,12 +37,22 @@ def client_requests(request):
 @require_POST
 @login_required
 def client_create(request):
-    result = budget_request.create_budget_request(actor=request.user, data=_input_dto(request))
+    data = _input_dto(request)
+    result = budget_request.create_budget_request(actor=request.user, data=data)
     if not result["success"]:
-        props = budget_request.get_create_request_page(actor=request.user)
-        props["errors"] = result["errors"]
-        props["form"] = _input_dto(request).__dict__
-        return render(request, "BudgetRequests/ClientCreate", props)
+        return render(
+            request,
+            "BudgetRequests/ClientCreate",
+            {
+                "errors": result["errors"],
+                "request": None,
+                "form": {
+                    "title": data.title,
+                    "amount": data.amount,
+                    "business_justification": data.business_justification,
+                },
+            },
+        )
     messages.success(request, result["message"])
     return redirect("budget_client_requests")
 

@@ -112,6 +112,18 @@ class LoginServiceTests(TestCase):
         self.assertTrue(result.success)
         self.assertEqual(result.redirect_url, "/budget-requests/")
 
+    def test_client_role_does_not_redirect_to_admin_dashboard(self):
+        client = make_user("regular")
+        client.groups.add(Group.objects.get_or_create(name="Client")[0])
+
+        result = login_user(
+            request_with_session(),
+            login_input(username="regular", next_url="/admin/"),
+        )
+
+        self.assertTrue(result.success)
+        self.assertEqual(result.redirect_url, "/budget-requests/")
+
 
 class LogoutServiceTests(TestCase):
     def test_logout_clears_session_user(self):

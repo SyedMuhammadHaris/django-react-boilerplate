@@ -69,3 +69,5 @@ urlpatterns = [
     path("budget-admin/", admin_dashboard, name="budget_admin_dashboard"),
     path("budget-admin/<int:budget_request_id>/delete/", admin_delete, name="budget_request_delete"),
 ]
+
+handler403 = "main.errors.permission_denied"

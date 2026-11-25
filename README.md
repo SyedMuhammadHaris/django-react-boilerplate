@@ -1,114 +1,138 @@
-# Django + Inertia + React + shadcn/ui Starter Kit
+# Django + Inertia + React Budget Request App
 
-A full-stack starter for building web apps with **Django** on the backend and **React** on the frontend, glued together by **Inertia.js** — no separate API, no separate SPA deployment. It ships with a production-ready **admin console** built on **shadcn/ui**: users, groups, permissions, light and dark themes.
+A full-stack application built with Django, Inertia.js, and React. Django owns routing, authentication, permissions, and business rules. React renders the pages through Inertia.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-dark.png">
-  <img alt="Admin dashboard" src="docs/images/dashboard-light.png">
-</picture>
+## Loom walkthrough
 
-## Features
+[Watch the budget request role walkthrough](https://www.loom.com/share/3709af6c098a498a9ee0ad555857e208)
 
-- **Django 6** owns routing, authentication, permissions and validation
-- **Inertia.js 2 + React 18** for SPA-speed navigation with server-side routing
-- **shadcn/ui** (new-york, zinc) with the Geist font, light and dark themes
-- **Admin console** — collapsible sidebar, breadcrumbs, ⌘K command palette, toasts, responsive mobile layout
-- **User & group management** — search, sorting, pagination, validation, safe deletes
-- **Secure by default** — Django model permissions, superuser-only privilege changes, self-lockout protection, password validation, login throttling, CSRF
-- **Clean architecture** — views → services → selectors / policies, with DTOs at the boundaries ([details](docs/architecture.md))
-- **Celery + Redis** for background jobs, with **Celery Beat** schedules editable in Django admin
-- **Vite 7** dev server with HMR and manifest-based production builds
-- **Tested** — 100+ Django tests, ESLint and Vitest on the frontend
+## Budget request roles
+
+| Role | What they can do |
+|---|---|
+| Client | Submit budget requests and view their own requests. They can edit or withdraw requests while they are pending. |
+| Manager | Review pending requests, approve them, or reject them with a review note. They can also view decision history. |
+| Admin | View budget totals and all requests, and delete requests. |
+
+Roles and permissions are enforced by Django. The budget pages are:
+
+- Client: `/budget-requests/`
+- Manager: `/budget-review/`
+- Admin: `/budget-admin/`
+
+The user and group management console is at `/admin/`. Django's built-in admin is at `/django-admin/`.
 
 ## Screenshots
 
-| Sign in | Users |
-|---|---|
-| ![Sign in page](docs/images/login-light.png) | ![Users list](docs/images/users-light.png) |
-| **Edit user** | **Command palette (⌘K)** |
-| ![Edit user form](docs/images/user-edit-light.png) | ![Command palette](docs/images/command-dark.png) |
-| **Groups** | **Collapsed sidebar** |
-| ![Groups list](docs/images/groups-dark.png) | ![Collapsed sidebar](docs/images/collapsed-light.png) |
+| Client: my requests | Manager: review queue | Admin: budget overview |
+|---|---|---|
+| ![Client budget requests dashboard](docs/images/client_dashboard.png) | ![Manager review queue](docs/images/manager_dashboard.png) | ![Admin budget overview](docs/images/admin_dashboard.png) |
 
-<p>
-  <img alt="Mobile dashboard" src="docs/images/mobile-light.png" width="260">
-  &nbsp;
-  <img alt="Mobile navigation" src="docs/images/mobile-nav-dark.png" width="260">
-</p>
+See the [screenshot gallery](docs/screenshots.md) for the admin console screens.
 
-More in the [screenshot gallery](docs/screenshots.md).
+## Requirements
 
-## Quick start
+- Python 3.12 or newer
+- [uv](https://docs.astral.sh/uv/)
+- Node.js 20.19 or newer, with npm
 
-**Requirements:** Python 3.12+ ([uv](https://github.com/astral-sh/uv) recommended) and Node.js 20.19+.
+## PostgreSQL configuration
+
+Django reads database settings from a `.env` file in the repository root, beside `pyproject.toml` (not inside `starterkit`). Add your PostgreSQL connection settings there:
+
+```dotenv
+DB_NAME=budget_request_db
+DB_USER=postgres
+DB_PASS=your_postgres_password
+DB_HOST=localhost
+DB_PORT=5432
+```
+
+Replace the example database name and password with your own values. Create the database in PostgreSQL if it does not already exist:
+
+```sql
+CREATE DATABASE budget_request_db;
+```
+
+Keep `.env` private and do not commit it. The PostgreSQL server must be running before you run Django commands.
+
+## Run locally
+
+Run these commands from the repository root.
+
+### Django backend
 
 ```bash
-git clone git@github.com:crenspire/django-react-boilerplate.git
-cd django-react-boilerplate
-
-# Backend
 uv run python starterkit/manage.py migrate
 uv run python starterkit/manage.py createsuperuser
 uv run python starterkit/manage.py runserver
+```
 
-# Frontend (second terminal)
+`uv run` creates the Python environment and installs the project dependencies when needed. Django connects to the PostgreSQL database configured in `.env`.
+
+### React frontend
+
+Open a second terminal:
+
+```bash
 cd starterkit/frontend
 npm install
 npm run dev
 ```
 
-Open **http://127.0.0.1:8000** for the landing page and **http://127.0.0.1:8000/admin/** for the admin console.
+Keep both servers running, then open **http://127.0.0.1:8000/**.
 
-Background jobs need Redis, a Celery worker and Beat. Start Redis with `docker compose up -d`, then run everything at once with `uvx honcho -f Procfile.dev start` (see [Background tasks](docs/background-tasks.md)).
+Create a superuser for administration. To test the budget workflow, create users and assign them to Django groups named exactly `Client`, `Manager`, or `Admin`.
 
-The full walkthrough is in [Getting started](docs/getting-started.md).
+## Optional background jobs
 
-## Documentation
+Redis, Celery Worker, and Celery Beat are only needed for background and scheduled jobs.
 
-| Guide | What's inside |
-|---|---|
-| [Getting started](docs/getting-started.md) | Install, run, create an admin, project layout |
-| [Architecture](docs/architecture.md) | Layers and rules, request lifecycle, adding a feature step by step |
-| [Permissions](docs/permissions.md) | Who can do what in the admin and how to change it |
-| [Frontend](docs/frontend.md) | Admin shell, pages, shadcn/ui components, routes, theming |
-| [Background tasks](docs/background-tasks.md) | Celery workers, Beat schedules, Redis |
-| [Configuration](docs/configuration.md) | Environment variables |
-| [Deployment](docs/deployment.md) | Production build, static files, security checklist |
-| [Testing](docs/testing.md) | Running and writing backend and frontend tests |
+```bash
+docker compose up -d
+cd starterkit
+uv run celery -A main worker -l info
+uv run celery -A main beat -l info
+```
+
+See [Background tasks](docs/background-tasks.md) for details.
+
+## Tests and checks
+
+```bash
+uv run python starterkit/manage.py test
+```
+
+From `starterkit/frontend`:
+
+```bash
+npm run lint
+npm test
+npm run build
+```
 
 ## Project structure
 
-```
+```text
 starterkit/
-├── main/                     # Django project: settings, urls, middleware, Celery app, route map
-├── apps/system/              # Maintenance services and Celery tasks
-├── apps/admin_panel/         # Admin console
-│   ├── api/                  #   views: parse request → call one service → respond
-│   ├── services/             #   business logic and page props
-│   ├── selectors/            #   all ORM queries
-│   ├── domain/               #   permission policies
-│   ├── dto/                  #   immutable input/output containers
-│   ├── infrastructure/       #   adapters for external systems (cache)
-│   └── tests/
-├── frontend/                 # React + Vite + Inertia
-│   ├── Pages/                #   one component per Inertia page
-│   ├── Layouts/              #   AdminLayout, AuthLayout
-│   ├── Components/           #   ui/ (shadcn/ui), admin/ (app components)
-│   ├── composables/          #   React hooks
-│   └── lib/                  #   pure helpers (+ unit tests)
-├── templates/base.html       # Inertia root template
-└── manage.py
+├── main/                  Django settings, URLs, middleware, and Celery app
+├── apps/admin_panel/      Inertia admin console
+├── apps/budget_request/   Budget request workflow and role policies
+├── templates/             Inertia root template
+└── frontend/              React pages, layouts, components, and Vite config
 ```
 
-## Tests
+## Documentation
 
-```bash
-uv run python starterkit/manage.py test      # backend
-
-cd starterkit/frontend
-npm run lint && npm test                      # frontend
-```
+- [Getting started](docs/getting-started.md)
+- [Architecture](docs/architecture.md)
+- [Permissions](docs/permissions.md)
+- [Frontend](docs/frontend.md)
+- [Background tasks](docs/background-tasks.md)
+- [Configuration](docs/configuration.md)
+- [Deployment](docs/deployment.md)
+- [Testing](docs/testing.md)
 
 ## License
 
-MIT. Use this starter for personal or commercial projects.
+MIT.

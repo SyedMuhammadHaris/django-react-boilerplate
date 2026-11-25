@@ -87,6 +87,7 @@ ROOT_URLCONF = 'main.urls'
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'admin_dashboard'
+CSRF_FAILURE_VIEW = 'main.errors.csrf_failure'
 
 TEMPLATES = [
     {

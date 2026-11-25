@@ -1,4 +1,5 @@
 import hashlib
+from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.contrib.auth import authenticate, login as django_login, logout as django_logout
@@ -68,9 +69,13 @@ def login_user(request: HttpRequest, data: LoginInputDTO) -> LoginResultDTO:
     else:
         role_default = data.default_redirect_url
 
+    next_url = data.next_url
+    if has_budget_role and urlsplit(next_url).path.startswith(reverse("admin_dashboard")):
+        next_url = ""
+
     return LoginResultDTO(
         success=True,
-        redirect_url=_safe_redirect_url(request, data.next_url, role_default),
+        redirect_url=_safe_redirect_url(request, next_url, role_default),
         errors={},
         page_props=None,
     )
