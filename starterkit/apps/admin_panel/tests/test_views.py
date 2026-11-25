@@ -31,6 +31,23 @@ class AccessTests(InertiaClientMixin, TestCase):
         self.assertEqual(self.client.get("/admin/users/").status_code, 403)
         self.assertEqual(self.client.get("/admin/groups/").status_code, 403)
 
+    def test_inertia_permission_error_returns_to_previous_page_with_message(self):
+        self.client.force_login(make_staff())
+
+        response = self.client.get(
+            "/admin/users/",
+            HTTP_X_INERTIA="true",
+            HTTP_X_INERTIA_VERSION="1.0",
+            HTTP_REFERER="http://testserver/admin/",
+        )
+
+        self.assertRedirects(response, "/admin/", fetch_redirect_response=False)
+        page = self.page(self.client.get("/admin/", **INERTIA_HEADERS))
+        self.assertEqual(
+            page["props"]["flash"],
+            [{"level": "error", "message": "You don't have permission to complete that action."}],
+        )
+
     def test_delete_requires_post(self):
         self.client.force_login(make_superuser())
         target = make_user("target")
@@ -110,7 +127,7 @@ class UserViewTests(InertiaClientMixin, TestCase):
             {"username": "climber", "is_staff": True, "is_superuser": True, "is_active": True},
         )
 
-        self.assertEqual(response.status_code, 403)
+        self.assertRedirects(response, "/", fetch_redirect_response=False)
         staff.refresh_from_db()
         self.assertFalse(staff.is_superuser)
 
@@ -180,6 +197,23 @@ class AuthViewTests(InertiaClientMixin, TestCase):
         client = Client(enforce_csrf_checks=True)
         response = client.post("/admin/login/", {"username": "staffuser", "password": STRONG_PASSWORD})
         self.assertEqual(response.status_code, 403)
+
+    def test_inertia_csrf_failure_returns_to_login_with_message(self):
+        client = Client(enforce_csrf_checks=True)
+
+        response = client.post(
+            "/admin/login/",
+            {"username": "staffuser", "password": STRONG_PASSWORD},
+            HTTP_X_INERTIA="true",
+            HTTP_REFERER="http://testserver/admin/login/",
+        )
+
+        self.assertRedirects(response, "/admin/login/", fetch_redirect_response=False)
+        page = self.page(client.get("/admin/login/", **INERTIA_HEADERS))
+        self.assertEqual(
+            page["props"]["flash"],
+            [{"level": "error", "message": "Your session could not be verified. Please refresh the page and try again."}],
+        )
 
     def test_failed_login_re_renders_without_password(self):
         response = self.post_json(self.client, "/admin/login/", {"username": "staffuser", "password": "nope"})

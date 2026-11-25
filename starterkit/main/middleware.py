@@ -14,6 +14,12 @@ def get_auth_props(request) -> dict:
     user = getattr(request, "user", None)
     if user is None or not user.is_authenticated:
         return {"user": None}
+    role = None
+    if getattr(user, "is_superuser", False):
+        role = "Admin"
+    else:
+        group_names = set(user.groups.values_list("name", flat=True))
+        role = next((name for name in ("Admin", "Manager", "Client") if name in group_names), None)
     return {
         "user": {
             "id": user.pk,
@@ -21,6 +27,7 @@ def get_auth_props(request) -> dict:
             "email": getattr(user, "email", "") or "",
             "first_name": getattr(user, "first_name", "") or "",
             "last_name": getattr(user, "last_name", "") or "",
+            "role": role,
         }
     }
 

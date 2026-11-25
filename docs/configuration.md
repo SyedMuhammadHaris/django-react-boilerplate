@@ -1,6 +1,6 @@
 # Configuration
 
-All settings come from environment variables read in [`main/settings.py`](../starterkit/main/settings.py). Defaults are tuned for local development, so nothing needs to be set to run the app locally.
+Settings come from environment variables read in [`main/settings.py`](../starterkit/main/settings.py). Locally, Django loads them from the repository-root `.env` file. Copy the example values below into `.env` and update the credentials for your PostgreSQL server. `.env` is ignored by Git.
 
 ## Core
 
@@ -10,7 +10,11 @@ All settings come from environment variables read in [`main/settings.py`](../sta
 | `DJANGO_SECRET_KEY` | development-only key | **Required** when `DJANGO_DEBUG=false`; startup fails without it. |
 | `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` in debug, empty otherwise | Comma-separated host names. |
 | `DJANGO_CSRF_TRUSTED_ORIGINS` | – | Comma-separated origins, e.g. `https://admin.example.com`. |
-| `DJANGO_SQLITE_PATH` | `starterkit/db.sqlite3` | Path of the SQLite database. |
+| `DB_NAME` | — | PostgreSQL database name. |
+| `DB_USER` | — | PostgreSQL user. |
+| `DB_PASS` | — | PostgreSQL password. |
+| `DB_HOST` | `127.0.0.1` in the local `.env` | PostgreSQL host. |
+| `DB_PORT` | `5432` in the local `.env` | PostgreSQL port. |
 
 ## Security
 
@@ -60,4 +64,4 @@ VITE_DEV_MODE=false uv run python starterkit/manage.py runserver
 
 ## Using another database
 
-`DATABASES` is SQLite by default. For PostgreSQL, install a driver (`uv add "psycopg[binary]"`) and replace the `DATABASES` block in `settings.py`, reading credentials from environment variables in the same style.
+The application uses PostgreSQL and checks the connection during settings initialization. Start PostgreSQL and set valid `DB_*` values in `.env` before running Django commands.
