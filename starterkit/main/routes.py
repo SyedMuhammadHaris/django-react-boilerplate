@@ -22,6 +22,15 @@ EXPOSED_ROUTE_NAMES = (
     "admin_group_create",
     "admin_group_edit",
     "admin_group_delete",
+    "budget_client_requests",
+    "budget_request_create_page",
+    "budget_request_create",
+    "budget_request_update",
+    "budget_request_withdraw",
+    "budget_manager_queue",
+    "budget_request_review",
+    "budget_admin_dashboard",
+    "budget_request_delete",
 )
 
 _PLACEHOLDER = re.compile(r"%\((\w+)\)s")

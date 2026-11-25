@@ -3,6 +3,7 @@ import hashlib
 from django.conf import settings
 from django.contrib.auth import authenticate, login as django_login, logout as django_logout
 from django.http import HttpRequest
+from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 
 from apps.admin_panel.domain.policies import can_access_admin
@@ -10,7 +11,7 @@ from apps.admin_panel.dto.auth import LoginInputDTO, LoginResultDTO
 from apps.admin_panel.infrastructure import attempt_counter
 
 INVALID_CREDENTIALS_ERROR = (
-    "Please enter the correct username and password for a staff account. "
+    "Please enter the correct username and password for an active account. "
     "Note that both fields may be case-sensitive."
 )
 TOO_MANY_ATTEMPTS_ERROR = "Too many failed login attempts. Please try again later."
@@ -47,7 +48,9 @@ def login_user(request: HttpRequest, data: LoginInputDTO) -> LoginResultDTO:
         return _failure(username, data, errors)
 
     user = authenticate(request, username=username, password=data.password)
-    if user is None or not can_access_admin(user):
+    role_names = set(user.groups.values_list("name", flat=True)) if user is not None else set()
+    has_budget_role = bool(role_names.intersection({"Client", "Manager", "Admin"}))
+    if user is None or not getattr(user, "is_active", False) or not (can_access_admin(user) or has_budget_role):
         window = settings.ADMIN_LOGIN_LOCKOUT_SECONDS
         attempt_counter.increment(user_key, window_seconds=window)
         attempt_counter.increment(client_key, window_seconds=window)
@@ -56,9 +59,18 @@ def login_user(request: HttpRequest, data: LoginInputDTO) -> LoginResultDTO:
     attempt_counter.reset(user_key)
     django_login(request, user)
 
+    if "Admin" in role_names or getattr(user, "is_superuser", False):
+        role_default = reverse("budget_admin_dashboard")
+    elif "Manager" in role_names:
+        role_default = reverse("budget_manager_queue")
+    elif "Client" in role_names:
+        role_default = reverse("budget_client_requests")
+    else:
+        role_default = data.default_redirect_url
+
     return LoginResultDTO(
         success=True,
-        redirect_url=_safe_redirect_url(request, data.next_url, data.default_redirect_url),
+        redirect_url=_safe_redirect_url(request, data.next_url, role_default),
         errors={},
         page_props=None,
     )

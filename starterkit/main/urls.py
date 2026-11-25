@@ -32,6 +32,17 @@ from apps.admin_panel.api.user_views import (
     user_edit,
     user_list,
 )
+from apps.budget_request.api.budget_request import (
+    admin_dashboard,
+    admin_delete,
+    client_create,
+    client_create_page,
+    client_requests,
+    client_update,
+    client_withdraw,
+    manager_queue,
+    manager_review,
+)
 
 urlpatterns = [
     path("", home, name="home"),
@@ -48,4 +59,13 @@ urlpatterns = [
     path("admin/groups/create/", group_create, name="admin_group_create"),
     path("admin/groups/<int:group_id>/edit/", group_edit, name="admin_group_edit"),
     path("admin/groups/<int:group_id>/delete/", group_delete, name="admin_group_delete"),
+    path("budget-requests/", client_requests, name="budget_client_requests"),
+    path("budget-requests/create/", client_create_page, name="budget_request_create_page"),
+    path("budget-requests/create-submit/", client_create, name="budget_request_create"),
+    path("budget-requests/<int:budget_request_id>/update/", client_update, name="budget_request_update"),
+    path("budget-requests/<int:budget_request_id>/withdraw/", client_withdraw, name="budget_request_withdraw"),
+    path("budget-review/", manager_queue, name="budget_manager_queue"),
+    path("budget-review/<int:budget_request_id>/", manager_review, name="budget_request_review"),
+    path("budget-admin/", admin_dashboard, name="budget_admin_dashboard"),
+    path("budget-admin/<int:budget_request_id>/delete/", admin_delete, name="budget_request_delete"),
 ]

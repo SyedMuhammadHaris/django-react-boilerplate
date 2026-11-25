@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Group
 from django.contrib.sessions.backends.db import SessionStore
 from django.core.cache import cache
 from django.test import RequestFactory, TestCase, override_settings
@@ -101,6 +102,15 @@ class LoginServiceTests(TestCase):
         result = login_user(request_with_session(), login_input())
 
         self.assertTrue(result.success)
+
+    def test_client_role_can_log_in(self):
+        client = make_user("regular")
+        client.groups.add(Group.objects.get_or_create(name="Client")[0])
+
+        result = login_user(request_with_session(), login_input(username="regular"))
+
+        self.assertTrue(result.success)
+        self.assertEqual(result.redirect_url, "/budget-requests/")
 
 
 class LogoutServiceTests(TestCase):

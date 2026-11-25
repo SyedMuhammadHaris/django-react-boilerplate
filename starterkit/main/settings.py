@@ -7,12 +7,19 @@ README.md for the variables production must set.
 """
 
 import os
+import logging
 from pathlib import Path
 
 from celery.schedules import crontab
 from django.core.exceptions import ImproperlyConfigured
+from django.db import connections
+import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = BASE_DIR.parent
+
+env = environ.Env()
+environ.Env.read_env(PROJECT_ROOT / ".env")
 
 
 def env_bool(name: str, default: bool) -> bool:
@@ -61,6 +68,7 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'apps.admin_panel',
     'apps.system',
+    'apps.budget_request',
 ]
 
 MIDDLEWARE = [
@@ -106,10 +114,21 @@ WSGI_APPLICATION = 'main.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.environ.get("DJANGO_SQLITE_PATH", BASE_DIR / 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASS'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
     }
 }
+
+try:
+    connections['default'].ensure_connection()
+    logging.info("Connected to %s database", env('DB_NAME'))
+except Exception:
+    logging.exception("Failed to connect to PostgreSQL")
+    raise SystemExit("Failed to connect to PostgreSQL. Exiting...")
 
 
 # Password validation
